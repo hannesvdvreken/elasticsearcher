@@ -2,15 +2,18 @@
 
 namespace ElasticSearcher\Parsers;
 
-use ElasticSearcher\Abstracts\AbstractResultParser;
+use ElasticSearcher\Contracts\ResultParser;
+use ElasticSearcher\Traits\ResultParser as ResultParserTrait;
 
-/**
- * @package ElasticSearcher\Parsers
- */
-class ArrayResultParser extends AbstractResultParser
+class ArrayResultParser implements ResultParser
 {
-	public function getResults()
-	{
-		return $this->getHits();
-	}
+    use ResultParserTrait;
+
+    /**
+     * @return array
+     */
+    public function getResults()
+    {
+        return isset($this->results['hits'], $this->results['hits']['hits']) ? $this->results['hits']['hits'] : [];
+    }
 }

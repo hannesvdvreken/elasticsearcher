@@ -2,102 +2,98 @@
 
 namespace ElasticSearcher;
 
-use Elasticsearch\Client;
 use Elasticsearch\ClientBuilder;
-use ElasticSearcher\Managers\IndicesManager;
 use ElasticSearcher\Managers\DocumentsManager;
+use ElasticSearcher\Managers\IndicesManager;
 
-/**
- * Package.
- */
 class ElasticSearcher
 {
-	/**
-	 * @var Environment
-	 */
-	private $environment;
+    /**
+     * @var Environment
+     */
+    private $environment;
 
-	/**
-	 * @var Client
-	 */
-	private $client;
+    /**
+     * @var \Elasticsearch\Client
+     */
+    private $client;
 
-	/**
-	 * @var IndicesManager
-	 */
-	private $indicesManager;
+    /**
+     * @var \ElasticSearcher\Managers\IndicesManager
+     */
+    private $indicesManager;
 
-	/**
-	 * @var DocumentsManager
-	 */
-	private $documentsManager;
+    /**
+     * @var \ElasticSearcher\Managers\DocumentsManager
+     */
+    private $documentsManager;
 
-	/**
-	 * @param Environment $environment
-	 */
-	public function __construct(Environment $environment)
-	{
-		$this->environment = $environment;
-		$this->createClient();
-	}
+    /**
+     * @param Environment $environment
+     */
+    public function __construct(Environment $environment = null)
+    {
+        // Allow super easy start.
+        if (!$environment) {
+            $environment = new Environment(['hosts' => ['localhost:9200']]);
+        }
 
-	/**
-	 * Create a client instance from the ElasticSearch SDK.
-	 */
-	public function createClient()
-	{
-		$client = ClientBuilder::fromConfig($this->environment->all());
+        $this->environment = $environment;
+    }
 
-		$this->setClient($client);
-	}
+    /**
+     * @return \Elasticsearch\Client
+     */
+    public function getClient()
+    {
+        if (!$this->client) {
+            $this->client = $this->createClient();
+        }
 
-	/**
-	 * @param \Elasticsearch\Client $client
-	 */
-	public function setClient(Client $client)
-	{
-		$this->client = $client;
-	}
+        return $this->client;
+    }
 
-	/**
-	 * @return \Elasticsearch\Client
-	 */
-	public function getClient()
-	{
-		return $this->client;
-	}
+    /**
+     * @return \ElasticSearcher\Managers\IndicesManager
+     */
+    public function getIndicesManager()
+    {
+        if (!$this->indicesManager) {
+            $this->indicesManager = new IndicesManager($this->getClient(), $env);
+        }
 
-	/**
-	 * @return IndicesManager
-	 */
-	public function indicesManager()
-	{
-		if (!$this->indicesManager) {
-			$this->indicesManager = new IndicesManager($this);
-		}
+        return $this->indicesManager;
+    }
 
-		return $this->indicesManager;
-	}
+    /**
+     * @return \ElasticSearcher\Managers\DocumentsManager
+     */
+    public function getDocumentsManager()
+    {
+        if (!$this->documentsManager) {
+            $this->documentsManager = new DocumentsManager($this);
+        }
 
-	/**
-	 * @return DocumentsManager
-	 */
-	public function documentsManager()
-	{
-		if (!$this->documentsManager) {
-			$this->documentsManager = new DocumentsManager($this);
-		}
+        return $this->documentsManager;
+    }
 
-		return $this->documentsManager;
-	}
+    /**
+     * @return bool
+     */
+    public function isHealthy()
+    {
+        $info = $this->getClient()->cluster()->health();
 
-	/**
-	 * @return bool
-	 */
-	public function isHealthy()
-	{
-		$info = $this->getClient()->cluster()->health();
+        return $info['status'] === 'green';
+    }
 
-		return $info['status'] == 'green';
-	}
+    /**
+     * Create an ElasticSearch SDK client.
+     *
+     * @return \Elasticsearch\Client
+     */
+    private function createClient()
+    {
+        return ClientBuilder::fromConfig($this->environment->all());
+    }
 }
